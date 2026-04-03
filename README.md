@@ -1,2 +1,4 @@
 # pygame-tictactoe
 a tic tac toe game made with pygame
+
+just download the tic tac toe folder and run the main.py file in console
