@@ -38,6 +38,7 @@ images = [pygame.transform.scale(pygame.image.load("blank.png").convert_alpha(),
 font = pygame.font.Font(None, 50)  # default font, size 50
 win_surface = font.render("You won!", True, (0, 0, 0))
 lose_surface = font.render("You lost!", True, (0, 0, 0))
+tie_surface = font.render("You tied!", True, (0, 0, 0))
 
 surface1 = images[0]
 rect1 = surface1.get_rect()
@@ -85,20 +86,34 @@ ver_surf = pygame.Surface((10, 500))
 surfaces = [surface1, surface2, surface3, surface4, surface5, surface6, surface7, surface8, surface9]
 rects = [rect1, rect2, rect3, rect4, rect5, rect6, rect7, rect8, rect9]
 
+def check_one_away():
+    for a, b, c in win_conditions:
+        if board[a] == board[b] == 'x' and board[c] == '':
+            return True, c
+        if board[a] == board[c] == 'x' and board[b] == '':
+            return True, b
+        if board[b] == board[c] == 'x' and board[a] == '':
+            return True, a
+    
+    return False, None
+
 def pick_square():
-    global board
-    global turn
-    global surfaces
-    global images
-    loop = True
-    print('looping comp...')
-    while loop:
-        square_num = random.randint(0, 8)
-        if board[square_num] == "":
-            board[square_num] = 'o'
-            surfaces[square_num] = images[2]
-            loop = False
-    print(board)
+    global board, turn, surfaces, images
+
+    if '' in board:
+        can_block, num = check_one_away()
+
+        if can_block:
+            board[num] = 'o'
+            surfaces[num] = images[2]
+        else:
+            while True:
+                square_num = random.randint(0, 8)
+                if board[square_num] == "":
+                    board[square_num] = 'o'
+                    surfaces[square_num] = images[2]
+                    break
+
     turn = "player"
 
 def player_square(picked_square):
@@ -112,6 +127,8 @@ def player_square(picked_square):
         board[picked_square] = 'x'
         surfaces[picked_square] = images[1]
         turn = "computer"
+    else:
+        print('cannot play here')
 
 def check_win(player):
     global board
@@ -120,13 +137,14 @@ def check_win(player):
         if board[a] == board[b] == board[c] == player:
             game_running = False
             return True
-        
+
 def restart():
     global surfaces
     global images
     global board
     global turn
-    
+    global game_running
+
     surfaces = [surface1, surface2, surface3, surface4, surface5, surface6, surface7, surface8, surface9]
     for i in range(9):
         surfaces[i] = images[0]
@@ -134,8 +152,11 @@ def restart():
              "", "", "",
              "", "", ""]
     turn = 'player'
+    game_running = True
+    print('reset!')
 
 while True:
+    screen.fill((255,255,255))
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
@@ -161,17 +182,23 @@ while True:
                     player_square(7)
                 elif rect9.collidepoint(event.pos):
                     player_square(8)
-            elif not game_running and restart_rect.collidepoint(event.pos):
+            if not game_running and restart_rect.collidepoint(event.pos):
                 restart()
 
     if check_win('x'):
         screen.blit(win_surface, (100, 100))
         screen.blit(restart_surface, restart_rect)
-        turn == False
+        turn = False
     elif check_win('o'):
         screen.blit(lose_surface, (100, 100))
         screen.blit(restart_surface, restart_rect)
-        turn == False
+        turn = False
+    elif '' not in board:
+        screen.blit(tie_surface, (100, 100))
+        screen.blit(restart_surface, restart_rect)
+        turn = False
+        game_running = False
+
 
     if turn == "computer":
         pick_square()
